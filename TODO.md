@@ -2,6 +2,8 @@
 
 * **Create issues for development tasks**
 * Create UML class diagram of proposed design
+* Revise build
+  * Use CMake, Docker, Github Workflow for CI
 * Remove hardcoded dependencies on hardware
   * Determine memory locations (stack, heap) dynamically
 * Provide HAL with required abstractions
