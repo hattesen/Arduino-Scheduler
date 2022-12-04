@@ -13,6 +13,7 @@
 * Allow operating in host environment (linux, windows, macos)
 * Main (master) process is NOT a scheduler task. Once scheduler is initialized and tasks are created, main process calls scheduler to start - never returns
 * Tasks
+  * Should tasks be called "workers"?
   * Tasks are instantiated from classes, implementing a Runnable interface ``int run()``. Scheduler reference is injected.
   * Task types:
     * Standard (run until done). May be restarted?
@@ -34,7 +35,7 @@
     * Logging
       * Scheduler events (task creation, start, done)
       * Output task status (single or all tasks): state, free stack
-    * API inspired by FreeRTOS
+
  
 ```C++
 int main() {
@@ -43,11 +44,21 @@ int main() {
   // Only the primary (highest priority) scheduler can be started directly. When started, it will start any children (recusively).
   // No more than one child scheduler can be created from any scheduler.
   
-  Scheduler scheduler1(); // primary scheduler. High priority.
+  // primary scheduler. High priority.
+  // Hardware abstraction layer (implements HAL interface).
+  // Log to std::cout (default: none).
+  // References are provided to child schedulers.
+  Scheduler scheduler1(Stm32f1_HAL::instance(), std::cout);
   Scheduler scheduler2 = scheduler1.child(); // Medium priority.
   Scheduler idleScheduler = scheduler2.child(); // Low priority.
   
-  WathdogTask<256> wdt(100ms); // 256 byte stack, 100 ms scheduler interval
+  Class Wdt: public Runner<int> { // 128 byte stack, 100 ms scheduler interval
+    Wdt() : Runner<128>(scheduler1, 100ms) {}
+    int run() override {
+      this->scheduler->hal.watchdogReset();
+      return 0;
+    }
+  }; 
   scheduler1.addTask(wdt);
 
   PIDTask<512> pid(50ms);
