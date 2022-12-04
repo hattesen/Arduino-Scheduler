@@ -30,6 +30,7 @@
     * Allow task deletion
     * Allow task restart
     * Low power sleep. If all tasks have been scheduled without running: enter low power sleep mode via HAL.
+    * Consider implementing await() as scheduler method with lambda
     * Logging
       * Scheduler events (task creation, start, done)
       * Output task status (single or all tasks): state, free stack
