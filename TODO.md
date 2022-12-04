@@ -38,15 +38,34 @@
  
 ```C++
 int main() {
-  Scheduler sch = Scheduler::getInstance([parameters]);
-  WathdogTask wdt(TaskType::TIMED(100), [stackSize]);
-  sch.createTask(wdt);
-  UITask ui(TaskType::STANDARD, [stackSize]);
-  scheduler.create(ui);
-  PIDTask pid(TaskType::TIMED(50), [stackSize]);
-  scheduler.start();
-  // will never reach
-  return 1;
+  // Schedulers schedule tasks round-robin.
+  // Only when all tasks are idle (sleeping, waiting or done) will time be allocated to child scheduler.
+  // Only the primary (highest priority) scheduler can be started directly. When started, it will start any children (recusively).
+  // No more than one child scheduler can be created from any scheduler.
+  
+  Scheduler scheduler1(); // primary scheduler. High priority.
+  Scheduler scheduler2 = scheduler1.child(); // Medium priority.
+  Scheduler idleScheduler = scheduler2.child(); // Low priority.
+  
+  WathdogTask<256> wdt(100ms); // 256 byte stack, 100 ms scheduler interval
+  scheduler1.addTask(wdt);
+
+  PIDTask<512> pid(50ms);
+  scheduler1.addtask(pid);
+  
+  UITask<512> ui();
+  scheduler2.addTask(ui);
+  
+  StatisticsTask<256> stat(10s); // reports statistics about schedulers, tasks, stack watermarks etc every 10 seconds
+  scheduler2.addTask(stat);
+  
+  IdleTask<128> idle(); // Idle task may perform housekeeping and even cause hardware to enter low-power sleep mode
+  idleScheduler.addTask(idle);
+  
+  scheduler.start(); // Start cascades to child schedulers
+  
+  // will never reach this point ...
+  return 1; // ... but if it happens, it would be an error
 }
 ```
       * 
